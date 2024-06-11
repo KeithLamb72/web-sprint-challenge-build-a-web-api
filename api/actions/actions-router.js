@@ -1,6 +1,7 @@
 // Write your "actions" router here!
 const express = require('express')
 const Actions = require('./actions-model')
+const { validateActionId, validateAction } = require('./actions-middlware')
 const router = express.Router()
 
 // [GET] /api/actions
@@ -14,21 +15,12 @@ router.get('/', async (req, res, next) => {
 })
 
 // [GET] /api/actions/:id
-router.get('/:id', async (req, res, next) => {
-    try {
-      const action = await Actions.get(req.params.id);
-      if (action) {
-        res.status(200).json(action);
-      } else {
-        res.status(404).json({ message: 'Action not found' });
-      }
-    } catch (err) {
-      next(err);
-    }
+router.get('/:id', validateActionId, (req, res) => {
+    res.status(200).json(req.action)
   })
 
 // [POST] /api/actions
-router.post('/', async (req, res, next) => {
+router.post('/', validateAction, async (req, res, next) => {
     try {
         const action = await Actions.insert(req.body)
         res.status(201).json(action)
@@ -38,32 +30,24 @@ router.post('/', async (req, res, next) => {
 })
 
 // [PUT] /api/actions/:id
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', validateActionId, validateAction, async (req, res, next) => {
     try {
-        const updatedAction = await Actions.update(req.params.id, req.body)
-        if (updatedAction) {
-            res.status(200).json(updatedAction)
-        } else {
-            res.status(404).json({ message: 'Action not found' })
-        }
+      const updatedAction = await Actions.update(req.params.id, req.body)
+      res.status(200).json(updatedAction)
     } catch (err) {
-        next(err)
+      next(err)
     }
-})
+  })
 
 // [DELETE] /api/actions/:id
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', validateActionId, async (req, res, next) => {
     try {
-        const count = await Actions.remove(req.params.id)
-        if (count > 0) {
-            res.status(200).json({ message: 'Action deleted' })
-        } else {
-            res.status(404).json({ message: 'Action not found' })
-        }
+      const count = await Actions.remove(req.params.id)
+      res.status(200).json({ message: 'Action deleted' })
     } catch (err) {
-        next(err)
+      next(err)
     }
-})
+  })
 
 module.exports = router

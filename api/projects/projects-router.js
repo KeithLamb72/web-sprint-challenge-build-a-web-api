@@ -1,27 +1,29 @@
 // Write your "projects" router here!
 const express = require('express')
 const Projects = require('./projects-model')
+const { validateProjectId, validateProject } = require('./projects-middleware')
 const router = express.Router()
 
 // [GET] api/projects
 router.get('/', async (req, res, next) => {
     try {
-        const projects = await Projects.get()
-        res.status(200).json(projects)
+      const projects = await Projects.get()
+      res.status(200).json(projects)
     } catch (err) {
-        next(err)
+      next(err)
     }
 })
 
 // [GET] api/projects/:id
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', validateProjectId, (req, res) => {
+  res.status(200).json(req.project)
+})
+
+// [GET] /api/projects/:id/actions
+router.get('/:id/actions', validateProjectId, async (req, res, next) => {
     try {
-        const project = await Projects.get(req.params.id)
-        if (project) {
-            res.status(200).json(project)
-        } else {
-            res.status(404).json({ message: 'Project not found' })
-        }
+        const actions = await Projects.getProjectActions(req.params.id)
+        res.status(200).json(actions)
     } catch (err) {
         next(err)
     }
@@ -29,7 +31,7 @@ router.get('/:id', async (req, res, next) => {
 
 // [POST] /api/projects
 
-router.post('/', async (req, res, next) => {
+router.post('/', validateProject, async (req, res, next) => {
     try {
         const project = await Projects.insert(req.body)
         res.status(201).json(project)
@@ -40,32 +42,24 @@ router.post('/', async (req, res, next) => {
 
 // [PUT] /api/projects/:id
 
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', validateProjectId, validateProject, async (req, res, next) => {
     try {
-        const updatedProject = await Projects.update(req.params.id, req.body)
-        if (updatedProject) {
-            res.status(200).json(updatedProject)
-        } else {
-            res.status(404).json({ message: 'Project not found' })
-        }
+      const updatedProject = await Projects.update(req.params.id, req.body)
+      res.status(200).json(updatedProject)
     } catch (err) {
-        next(err)
+      next(err)
     }
-})
+  })
 
 // [DELETE] /api/projects/:id
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', validateProjectId, async (req, res, next) => {
     try {
-        const count = await Projects.remove(req.params.id)
-        if (count > 0) {
-            res.status(200).json({ message: 'Project deleted'})
-        } else {
-            res.status(404).json({ message: 'Project not found' })
-        }
+      const count = await Projects.remove(req.params.id)
+      res.status(200).json({ message: 'Project deleted' })
     } catch (err) {
-        next(err)
+      next(err)
     }
-})
+  })
 
 module.exports = router
